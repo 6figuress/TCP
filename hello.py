@@ -1,6 +1,4 @@
-def main():
-    print("Hello from tcp!")
+from src.wrapper import Wrapper
 
-
-if __name__ == "__main__":
-    main()
+app: Wrapper = Wrapper()
+app.run()
