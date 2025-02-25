@@ -1,0 +1,14 @@
+[project]
+name = "tcp"
+version = "0.1.0"
+description = "TCP (Texture Coated-Painting) implements a wrapper around the Paint-it Text-to-Texture Synthesis implementation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
