@@ -5,12 +5,9 @@ description = "TCP (Texture Coated-Painting) implements a wrapper around the Pai
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "flask-cors>=5.0.1",
     "flask>=3.1.0",
-    "numpy>=2.2.4",
-    "pillow>=11.1.0",
-    "pygltflib>=1.16.3",
     "pytest>=8.3.4",
-    "trimesh>=4.6.4",
     "websocket-client>=1.8.0",
 ]
 

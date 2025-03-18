@@ -1,17 +1,31 @@
+import base64
 import json
 import os
-import uuid
-import websocket
-from urllib import request
-import trimesh
-import numpy as np
-from flask import Flask, jsonify, request as flask_request
 import tempfile
-import base64
+import uuid
+from urllib import request
+
+import websocket
+from flask import Flask, jsonify
+from flask import request as flask_request
+from flask_cors import CORS
+
 
 class Wrapper:
     def __init__(self) -> None:
         self.app: Flask = Flask(__name__)
+        # Add CORS support
+        CORS(
+            self.app,
+            resources={
+                r"/api/*": {
+                    "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+                    "methods": ["POST", "OPTIONS"],
+                    "allow_headers": ["Content-Type", "Accept"],
+                }
+            },
+        )
+
         self.server_address = "192.168.91.13:8188"
         self.client_id = str(uuid.uuid4())
         self.temp_dir = tempfile.mkdtemp()
@@ -19,17 +33,22 @@ class Wrapper:
         # Load the workflow JSON file
         workflow_path: str = os.path.join("workflows", "paint3d.json")
         try:
-            with open(workflow_path, 'r') as f:
+            with open(workflow_path, "r") as f:
                 self.workflow = json.load(f)
         except Exception as e:
             print(f"Error loading workflow file: {e}")
             self.workflow = None
 
-        @self.app.route("/api/texture", methods=["POST"])
+        @self.app.route("/api/texture", methods=["POST", "OPTIONS"])
         def texture():
             """
             Mesh texturing endpoint that interfaces with ComfyUI.
             """
+            # Handle OPTIONS request for CORS preflight
+            if flask_request.method == "OPTIONS":
+                response = jsonify({"status": "ok"})
+                return response
+
             try:
                 # Get request data
                 data = flask_request.get_json()
@@ -62,17 +81,19 @@ class Wrapper:
                 print("Step 2: Processing files...")
                 try:
                     glb_data = self.process_and_convert_to_glb()
-                    glb_base64 = base64.b64encode(glb_data).decode('utf-8')
+                    glb_base64 = base64.b64encode(glb_data).decode("utf-8")
                 except Exception as e:
                     return jsonify({"error": f"File processing failed: {str(e)}"}), 500
 
                 # Step 3: Return response
-                return jsonify({
-                    "status": "success",
-                    "message": "Generation completed",
-                    "user_prompt": user_prompt,
-                    "glb_data": glb_base64
-                })
+                return jsonify(
+                    {
+                        "status": "success",
+                        "message": "Generation completed",
+                        "user_prompt": user_prompt,
+                        "glb_data": glb_base64,
+                    }
+                )
 
             except Exception as e:
                 print(f"Error in texture endpoint: {str(e)}")
@@ -83,7 +104,7 @@ class Wrapper:
         Queue a prompt to ComfyUI
         """
         p = {"prompt": prompt, "client_id": self.client_id}
-        data = json.dumps(p).encode('utf-8')
+        data = json.dumps(p).encode("utf-8")
         req = request.Request(f"http://{self.server_address}/prompt", data=data)
         return json.loads(request.urlopen(req).read())
 
@@ -92,6 +113,7 @@ class Wrapper:
         Verify that the prompt execution completed successfully
         """
         import time
+
         start_time = time.time()
         execution_success = False
         final_node = False
@@ -105,24 +127,24 @@ class Wrapper:
                 message = json.loads(out)
                 print(f"Received message: {message}")
 
-                if message['type'] == 'executing':
-                    data = message['data']
-                    if data['prompt_id'] == prompt_id:
-                        if data['node'] is None:
+                if message["type"] == "executing":
+                    data = message["data"]
+                    if data["prompt_id"] == prompt_id:
+                        if data["node"] is None:
                             print("Final node reached")
                             final_node = True
                         else:
                             print(f"Processing node: {data['node']}")
 
-                elif message['type'] == 'execution_success':
-                    data = message['data']
-                    if data['prompt_id'] == prompt_id:
+                elif message["type"] == "execution_success":
+                    data = message["data"]
+                    if data["prompt_id"] == prompt_id:
                         print("Execution success received")
                         execution_success = True
 
-                elif message['type'] == 'execution_error':
-                    data = message['data']
-                    if data['prompt_id'] == prompt_id:
+                elif message["type"] == "execution_error":
+                    data = message["data"]
+                    if data["prompt_id"] == prompt_id:
                         print(f"Execution error: {data.get('error', 'Unknown error')}")
                         return False
 
@@ -136,9 +158,9 @@ class Wrapper:
         Download the required files from the server
         """
         files = {
-            'obj': 'base_duck.obj',
-            'mtl': 'base_duck.mtl',
-            'texture': 'albedo.png'
+            "obj": "base_duck.obj",
+            "mtl": "base_duck.mtl",
+            "texture": "albedo.png",
         }
 
         file_paths = {}
@@ -151,7 +173,7 @@ class Wrapper:
                 # Save to temporary directory
                 save_path = os.path.join(self.temp_dir, filename)
 
-                with open(save_path, 'wb') as f:
+                with open(save_path, "wb") as f:
                     f.write(response.read())
 
                 file_paths[file_type] = save_path
@@ -164,40 +186,53 @@ class Wrapper:
 
     def process_and_convert_to_glb(self):
         """
-        Download files and convert them to GLB format
+        Alternative method that uses external shell script to convert OBJ to GLB
         """
-        # Download the files
         files = self.download_files()
 
         try:
-            # Load the OBJ file with texture
-            mesh = trimesh.load(
-                files['obj'],
-                file_type='obj',
-                material_properties={
-                    'map_Kd': files['texture']
-                }
+            # Call the external conversion script
+            obj_path = files["obj"]
+            conversion_script = "scripts/obj_gltf.sh"
+
+            # Make sure the script is executable
+            os.chmod(conversion_script, 0o755)
+
+            # Run the conversion script with temp directory
+            import subprocess
+
+            result = subprocess.run(
+                [conversion_script, obj_path, self.temp_dir],
+                capture_output=True,
+                text=True,
             )
 
-            # Export as GLB
-            glb_path = os.path.join(self.temp_dir, 'output.glb')
-            mesh.export(glb_path, file_type='glb')
+            if result.returncode != 0:
+                raise Exception(f"Conversion script failed: {result.stderr}")
 
-            # Read the GLB file
-            with open(glb_path, 'rb') as f:
-                glb_data = f.read()
+            gltf_path = os.path.join(
+                self.temp_dir, os.path.splitext(os.path.basename(obj_path))[0] + ".glb"
+            )
 
-            # Clean up temporary files
+            # Read the generated GLTF file
+            with open(gltf_path, "rb") as f:
+                gltf_data = f.read()
+
+            # Cleanup
             for file_path in files.values():
                 if file_path and os.path.exists(file_path):
                     os.remove(file_path)
-            if os.path.exists(glb_path):
-                os.remove(glb_path)
+            if os.path.exists(gltf_path):
+                os.remove(gltf_path)
 
-            return glb_data
+            return gltf_data
 
         except Exception as e:
-            raise Exception(f"Error converting to GLB: {str(e)}")
+            print(f"Detailed error in GLTF conversion: {str(e)}")
+            import traceback
+
+            print(f"Traceback: {traceback.format_exc()}")
+            raise Exception(f"Error converting to GLTF: {str(e)}")
 
     def process_prompt(self, prompt):
         """
@@ -207,7 +242,7 @@ class Wrapper:
             # First, queue the prompt and get prompt_id
             print("Queueing prompt...")
             queue_response = self.queue_prompt(prompt)
-            prompt_id = queue_response['prompt_id']
+            prompt_id = queue_response["prompt_id"]
             print(f"Prompt queued with ID: {prompt_id}")
 
             # Then connect to websocket to monitor execution
@@ -224,22 +259,22 @@ class Wrapper:
                     print(f"Received message: {message}")
 
                     # Check if this message is relevant to our prompt
-                    if 'data' in message and 'prompt_id' in message['data']:
-                        if message['data']['prompt_id'] == prompt_id:
+                    if "data" in message and "prompt_id" in message["data"]:
+                        if message["data"]["prompt_id"] == prompt_id:
                             # Handle different message types
-                            if message['type'] == 'execution_start':
+                            if message["type"] == "execution_start":
                                 print("Execution started")
-                            elif message['type'] == 'executing':
-                                node = message['data'].get('node')
+                            elif message["type"] == "executing":
+                                node = message["data"].get("node")
                                 if node:
                                     print(f"Processing node: {node}")
                                 else:
                                     print("Final node reached")
-                            elif message['type'] == 'execution_error':
-                                error = message['data'].get('error', 'Unknown error')
+                            elif message["type"] == "execution_error":
+                                error = message["data"].get("error", "Unknown error")
                                 print(f"Execution failed: {error}")
                                 return False
-                            elif message['type'] == 'execution_success':
+                            elif message["type"] == "execution_success":
                                 print("Execution completed successfully")
                                 return True
 
@@ -261,7 +296,8 @@ class Wrapper:
         """
         try:
             import shutil
-            if hasattr(self, 'temp_dir') and os.path.exists(self.temp_dir):
+
+            if hasattr(self, "temp_dir") and os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
         except:
             # Ignore errors during shutdown

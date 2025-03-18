@@ -16,6 +16,7 @@ This API provides a service to apply AI-generated textures to 3D models using Co
 - Python 3.10 or higher
 - uv (Python package installer)
 - ComfyUI server running on the network
+- Blender (used for GLB conversion)
 
 ## Installation
 
