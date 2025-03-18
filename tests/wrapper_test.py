@@ -20,42 +20,9 @@ def test_wrapper_initialization():
     """Test if Wrapper initializes correctly"""
     wrapper = Wrapper()
     assert isinstance(wrapper.app, Flask)
-    assert hasattr(wrapper, "temp_dir")
-    assert os.path.exists(wrapper.temp_dir)
-
-
-@pytest.fixture
-def mock_websocket():
-    """Fixture to mock websocket connections"""
-    with patch("websocket.WebSocket") as mock_ws:
-        ws_instance = Mock()
-        mock_ws.return_value = ws_instance
-
-        # Mock successful websocket messages
-        def mock_recv():
-            return json.dumps(
-                {
-                    "type": "execution_success",
-                    "data": {"prompt_id": "test-id", "timestamp": 123456789},
-                }
-            )
-
-        ws_instance.recv.return_value = mock_recv()
-
-        yield mock_ws
-
-
-@pytest.fixture
-def mock_request():
-    """Fixture to mock URL requests"""
-    with patch("urllib.request.urlopen") as mock_urlopen:
-        # Mock successful prompt queue response
-        mock_response = Mock()
-        mock_response.read.return_value = json.dumps({"prompt_id": "test-id"}).encode(
-            "utf-8"
-        )
-        mock_urlopen.return_value = mock_response
-        yield mock_urlopen
+    # Remove temp_dir check since it's now handled per request
+    assert wrapper.server_address == "192.168.91.13:8188"
+    assert wrapper.llm_address == "192.168.91.12:11434"
 
 
 def test_texture_endpoint_missing_parameters(client):
@@ -79,6 +46,9 @@ def test_texture_endpoint_workflow_error():
 @patch("websocket.WebSocket")
 def test_process_prompt_execution_error(mock_ws):
     """Test handling of execution errors in process_prompt"""
+    wrapper = Wrapper()
+    context = wrapper.create_request_context()
+
     ws_instance = Mock()
     mock_ws.return_value = ws_instance
 
@@ -90,20 +60,22 @@ def test_process_prompt_execution_error(mock_ws):
         }
     )
 
-    wrapper = Wrapper()
-    success = wrapper.process_prompt({"test": "prompt"})
+    success = wrapper.process_prompt({"test": "prompt"}, context)
     assert not success
 
 
 @patch("urllib.request.urlopen")
 def test_download_files_error(mock_urlopen):
     """Test handling of file download errors"""
+    wrapper = Wrapper()
+    context = wrapper.create_request_context()
     mock_urlopen.side_effect = Exception("Download failed")
 
-    wrapper = Wrapper()
-    file_paths = wrapper.download_files()
-
+    file_paths = wrapper.download_files(context)
     assert all(path is None for path in file_paths.values())
+
+    # Cleanup
+    wrapper.cleanup_context(context)
 
 
 def test_run_method():
@@ -115,14 +87,11 @@ def test_run_method():
 
 
 def test_cleanup():
-    """Test temporary directory cleanup"""
+    """Test context cleanup"""
     wrapper = Wrapper()
-    temp_dir = wrapper.temp_dir
+    context = wrapper.create_request_context()
+    temp_dir = context["temp_dir"]
     assert os.path.exists(temp_dir)
 
-    # Manually call cleanup to avoid shutdown issues
-    import shutil
-
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir)
+    wrapper.cleanup_context(context)
     assert not os.path.exists(temp_dir)
