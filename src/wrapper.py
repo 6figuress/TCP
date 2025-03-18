@@ -6,7 +6,7 @@ import uuid
 from urllib import request
 
 import websocket
-from flask import Flask, jsonify
+from flask import Flask, Response, jsonify
 from flask import request as flask_request
 from flask_cors import CORS
 
@@ -27,8 +27,7 @@ class Wrapper:
         )
 
         self.server_address = "192.168.91.13:8188"
-        self.client_id = str(uuid.uuid4())
-        self.temp_dir = tempfile.mkdtemp()
+        self.llm_address = "192.168.91.12:11434"
 
         # Load the workflow JSON file
         workflow_path: str = os.path.join("workflows", "paint3d.json")
@@ -46,10 +45,12 @@ class Wrapper:
             """
             # Handle OPTIONS request for CORS preflight
             if flask_request.method == "OPTIONS":
-                response = jsonify({"status": "ok"})
-                return response
+                return jsonify({"status": "ok"})
 
             try:
+                # Create unique context for this request
+                request_context = self.create_request_context()
+
                 # Get request data
                 data = flask_request.get_json()
                 user_prompt: str = data.get("user_prompt")
@@ -70,9 +71,13 @@ class Wrapper:
                 else:
                     return jsonify({"error": "Invalid workflow configuration"}), 500
 
+                # Update the seed
+                if "72" in prompt:
+                    prompt["72"]["inputs"]["seed"] = str(uuid.uuid4().int % (2**32))
+
                 # Step 1: Process the prompt and wait for completion
                 print("Step 1: Processing prompt...")
-                success = self.process_prompt(prompt)
+                success = self.process_prompt(prompt, request_context)
 
                 if not success:
                     return jsonify({"error": "Prompt execution failed"}), 500
@@ -80,10 +85,12 @@ class Wrapper:
                 # Step 2: Download and convert files
                 print("Step 2: Processing files...")
                 try:
-                    glb_data = self.process_and_convert_to_glb()
+                    glb_data = self.process_and_convert_to_glb(request_context)
                     glb_base64 = base64.b64encode(glb_data).decode("utf-8")
                 except Exception as e:
                     return jsonify({"error": f"File processing failed: {str(e)}"}), 500
+
+                self.cleanup_context(request_context)
 
                 # Step 3: Return response
                 return jsonify(
@@ -99,11 +106,88 @@ class Wrapper:
                 print(f"Error in texture endpoint: {str(e)}")
                 return jsonify({"error": str(e)}), 500
 
-    def queue_prompt(self, prompt):
+        @self.app.route("/api/adventure", methods=["POST", "OPTIONS"])
+        def adventure():
+            if flask_request.method == "OPTIONS":
+                return jsonify({"status": "ok"})
+
+            try:
+                data = flask_request.get_json()
+                user_prompt = data.get("user_prompt")
+
+                if not user_prompt:
+                    return jsonify({"error": "Missing user prompt"}), 400
+
+                system_prompt = """You are a masterful fantasy storyteller, crafting immersive, vivid, and emotionally compelling adventures. Your task is to generate an engaging fantasy story based on the provided main character's name. The story should be richly descriptive, full of mystery, danger, and wonder, drawing the reader into a world filled with unique landscapes, magical elements, and intriguing characters.
+
+                Guidelines:
+                - **Character Development:** Create a compelling main character with strengths, weaknesses, and a sense of growth throughout the journey.
+                - **Supporting Cast:** Introduce intriguing allies, mentors, rivals, and villains who interact meaningfully with the protagonist.
+                - **World-Building:** Describe breathtaking landscapes, ancient ruins, hidden realms, and mystical creatures. Use all five senses to make the world feel alive.
+                - **Mystery & Wonder:** Weave a sense of the unknown—enigmatic prophecies, lost civilizations, hidden artifacts, or secrets waiting to be uncovered.
+                - **Danger & Conflict:** The journey should include perilous trials—treacherous landscapes, cunning foes, and moral dilemmas that test the hero's resolve.
+                - **Narrative Flow:** Maintain an engaging pace with moments of tension, triumph, and introspection. Every chapter should advance the adventure meaningfully.
+
+                Your goal is to **captivate and immerse** the reader, making them feel as if they are living the adventure alongside the protagonist."""
+
+                def generate():
+                    try:
+                        url = f"http://{self.llm_address}/api/generate"
+                        data = {
+                            "model": "mistral",
+                            "prompt": f"System: {system_prompt}\n\nHuman: {user_prompt}\n\nAssistant:",
+                            "stream": True,
+                        }
+
+                        # Make request using urllib
+                        req = request.Request(
+                            url,
+                            data=json.dumps(data).encode("utf-8"),
+                            headers={"Content-Type": "application/json"},
+                        )
+
+                        with request.urlopen(req) as response:
+                            for line in response:
+                                if line:
+                                    json_response = json.loads(line.decode())
+                                    if "response" in json_response:
+                                        yield f"data: {json.dumps({'text': json_response['response']})}\n\n"
+
+                    except Exception as e:
+                        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+                return Response(
+                    generate(),
+                    mimetype="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Headers": "Content-Type",
+                    },
+                )
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+    def cleanup_context(self, context):
+        """Clean up request-specific resources"""
+        try:
+            if os.path.exists(context["temp_dir"]):
+                import shutil
+
+                shutil.rmtree(context["temp_dir"])
+        except Exception as e:
+            print(f"Error cleaning up context: {e}")
+
+    def create_request_context(self):
+        """Create a unique context for each request"""
+        return {"temp_dir": tempfile.mkdtemp(), "client_id": str(uuid.uuid4())}
+
+    def queue_prompt(self, prompt, context):
         """
         Queue a prompt to ComfyUI
         """
-        p = {"prompt": prompt, "client_id": self.client_id}
+        p = {"prompt": prompt, "client_id": context["client_id"]}
         data = json.dumps(p).encode("utf-8")
         req = request.Request(f"http://{self.server_address}/prompt", data=data)
         return json.loads(request.urlopen(req).read())
@@ -153,7 +237,7 @@ class Wrapper:
                     print("Workflow completely finished")
                     return True
 
-    def download_files(self):
+    def download_files(self, context):
         """
         Download the required files from the server
         """
@@ -171,7 +255,7 @@ class Wrapper:
                 response = request.urlopen(url)
 
                 # Save to temporary directory
-                save_path = os.path.join(self.temp_dir, filename)
+                save_path = os.path.join(context["temp_dir"], filename)
 
                 with open(save_path, "wb") as f:
                     f.write(response.read())
@@ -184,11 +268,11 @@ class Wrapper:
 
         return file_paths
 
-    def process_and_convert_to_glb(self):
+    def process_and_convert_to_glb(self, context):
         """
         Alternative method that uses external shell script to convert OBJ to GLB
         """
-        files = self.download_files()
+        files = self.download_files(context)
 
         try:
             # Call the external conversion script
@@ -202,7 +286,7 @@ class Wrapper:
             import subprocess
 
             result = subprocess.run(
-                [conversion_script, obj_path, self.temp_dir],
+                [conversion_script, obj_path, context["temp_dir"]],
                 capture_output=True,
                 text=True,
             )
@@ -211,19 +295,13 @@ class Wrapper:
                 raise Exception(f"Conversion script failed: {result.stderr}")
 
             gltf_path = os.path.join(
-                self.temp_dir, os.path.splitext(os.path.basename(obj_path))[0] + ".glb"
+                context["temp_dir"],
+                os.path.splitext(os.path.basename(obj_path))[0] + ".glb",
             )
 
             # Read the generated GLTF file
             with open(gltf_path, "rb") as f:
                 gltf_data = f.read()
-
-            # Cleanup
-            for file_path in files.values():
-                if file_path and os.path.exists(file_path):
-                    os.remove(file_path)
-            if os.path.exists(gltf_path):
-                os.remove(gltf_path)
 
             return gltf_data
 
@@ -234,21 +312,21 @@ class Wrapper:
             print(f"Traceback: {traceback.format_exc()}")
             raise Exception(f"Error converting to GLTF: {str(e)}")
 
-    def process_prompt(self, prompt):
+    def process_prompt(self, prompt, context):
         """
         Process the prompt and verify execution
         """
         try:
             # First, queue the prompt and get prompt_id
             print("Queueing prompt...")
-            queue_response = self.queue_prompt(prompt)
+            queue_response = self.queue_prompt(prompt, context)
             prompt_id = queue_response["prompt_id"]
             print(f"Prompt queued with ID: {prompt_id}")
 
             # Then connect to websocket to monitor execution
             ws = websocket.WebSocket()
             ws.settimeout(300)  # 5 minutes timeout
-            ws.connect(f"ws://{self.server_address}/ws?clientId={self.client_id}")
+            ws.connect(f"ws://{self.server_address}/ws?clientId={context['client_id']}")
 
             # Wait for execution to complete
             print("Waiting for execution to complete...")
