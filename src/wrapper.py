@@ -19,7 +19,10 @@ class Wrapper:
             self.app,
             resources={
                 r"/api/*": {
-                    "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+                    "origins": [
+                        "http://localhost:5173", "http://127.0.0.1:5173",
+                        "http://localhost:8888", "http://127.0.0.1:8888",
+                    ],
                     "methods": ["POST", "OPTIONS"],
                     "allow_headers": ["Content-Type", "Accept"],
                 }
