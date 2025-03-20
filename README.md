@@ -1,5 +1,4 @@
 [![codecov](https://codecov.io/gh/6figuress/TCP/branch/main/graph/badge.svg?token=W25GRHWTS0)](https://codecov.io/gh/6figuress/TCP)
-![Test status](https://github.com/6figuress/TCP/actions/workflows/testing.yml/badge.svg)
 
 # 3D Model Texturing API
 
