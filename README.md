@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/6figuress/TCP/branch/main/graph/badge.svg?token=W25GRHWTS0)](https://codecov.io/gh/6figuress/TCP)
+[![codecov](https://codecov.io/gh/6figuress/TCP/graph/badge.svg?token=9M193G924T)](https://codecov.io/gh/6figuress/TCP)
 
 # 3D Model Texturing API
 
