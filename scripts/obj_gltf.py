@@ -86,9 +86,9 @@ for current_argument in sys.argv:
     print("Applying 10x scale to all objects...")
     for obj in bpy.data.objects:
         if obj.type == "MESH":
-            obj.scale.x *= 2.1
-            obj.scale.y *= 2.1
-            obj.scale.z *= 2.1
+            obj.scale.x *= 18
+            obj.scale.y *= 18
+            obj.scale.z *= 18
             # Apply scale to make it permanent
             bpy.context.view_layer.objects.active = obj
             obj.select_set(True)

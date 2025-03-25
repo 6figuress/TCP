@@ -1,0 +1,1044 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "revAnimated_v2Rebirth.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "klF8Anime2VAE_klF8Anime2VAE.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "spiderman rubber ducky, turn around, painting, high quality, colorful",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": "strong light, Bright light, intense light, dazzling light, brilliant light, radiant light, Shade, darkness, silhouette, dimness, obscurity, shadow, glasses",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "control_net_name": "control_v11f1p_sd15_depth_fp16.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "8": {
+    "inputs": {
+      "control_net_name": "control_v11p_sd15_inpaint_fp16.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "9": {
+    "inputs": {
+      "mesh_file_path": "/root/ComfyUI/input/3d/base_duck.obj",
+      "sampler": "dpmpp_2m_sde_gpu",
+      "scheduler": "karras",
+      "seed": 793,
+      "txt2img_steps": 30,
+      "txt2img_cfg": 3,
+      "txt2img_denoise": 1,
+      "inpaint_steps": 20,
+      "inpaint_cfg": 3,
+      "inpaint_denoise": 1,
+      "depth_strength": 1,
+      "inpaint_strength": 0.5,
+      "projection_mode": "Orthographic",
+      "look_at_height": 0.25,
+      "cam_front": 0,
+      "cam_back": 23,
+      "cam_left": 5,
+      "cam_right": 6,
+      "cam_top": 24,
+      "cam_bottom": 25,
+      "grid_size": 512,
+      "ckpt": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "depth_controlnet": [
+        "7",
+        0
+      ],
+      "inpaint_controlnet": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "3D_TrainConfig",
+    "_meta": {
+      "title": "3D_TrainConfig"
+    }
+  },
+  "10": {
+    "inputs": {
+      "train_config": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "3D_TrainConfigPipe",
+    "_meta": {
+      "title": "3D_TrainConfigPipe"
+    }
+  },
+  "14": {
+    "inputs": {
+      "train_config": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "3D_LoadMeshModel",
+    "_meta": {
+      "title": "3D_LoadMeshModel"
+    }
+  },
+  "17": {
+    "inputs": {
+      "images": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "20": {
+    "inputs": {
+      "conditioning_1": [
+        "10",
+        6
+      ],
+      "conditioning_2": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "21": {
+    "inputs": {
+      "conditioning_1": [
+        "10",
+        7
+      ],
+      "conditioning_2": [
+        "23",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "22": {
+    "inputs": {
+      "text": "front",
+      "clip": [
+        "10",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "23": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "10",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "24": {
+    "inputs": {
+      "strength": 1,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "20",
+        0
+      ],
+      "negative": [
+        "21",
+        0
+      ],
+      "control_net": [
+        "10",
+        16
+      ],
+      "image": [
+        "29",
+        0
+      ],
+      "vae": [
+        "10",
+        3
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "26": {
+    "inputs": {
+      "seed": [
+        "10",
+        8
+      ],
+      "steps": [
+        "10",
+        9
+      ],
+      "cfg": [
+        "10",
+        10
+      ],
+      "sampler_name": [
+        "10",
+        4
+      ],
+      "scheduler": [
+        "10",
+        5
+      ],
+      "denoise": [
+        "10",
+        11
+      ],
+      "model": [
+        "10",
+        1
+      ],
+      "positive": [
+        "24",
+        0
+      ],
+      "negative": [
+        "24",
+        1
+      ],
+      "latent_image": [
+        "10",
+        25
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "27": {
+    "inputs": {
+      "samples": [
+        "26",
+        0
+      ],
+      "vae": [
+        "10",
+        3
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "28": {
+    "inputs": {
+      "images": [
+        "30",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "29": {
+    "inputs": {
+      "cam1": 0,
+      "mesh_model": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "3D_GenerateSingleDepthImage",
+    "_meta": {
+      "title": "3D_GenerateSingleDepthImage"
+    }
+  },
+  "30": {
+    "inputs": {
+      "image": [
+        "27",
+        0
+      ]
+    },
+    "class_type": "3D_DuplicateImageMirrored",
+    "_meta": {
+      "title": "3D_DuplicateImageMirrored"
+    }
+  },
+  "31": {
+    "inputs": {
+      "cam1": 0,
+      "cam2": 23,
+      "image": [
+        "30",
+        0
+      ],
+      "mesh_model": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "3D_Projection",
+    "_meta": {
+      "title": "3D_Projection"
+    }
+  },
+  "32": {
+    "inputs": {
+      "images": [
+        "31",
+        1
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "35": {
+    "inputs": {
+      "train_config": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "3D_TrainConfigPipe",
+    "_meta": {
+      "title": "3D_TrainConfigPipe"
+    }
+  },
+  "37": {
+    "inputs": {
+      "cam1": [
+        "35",
+        21
+      ],
+      "cam2": [
+        "35",
+        22
+      ],
+      "mesh_model": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "3D_GenerateInpaintMask",
+    "_meta": {
+      "title": "3D_GenerateInpaintMask"
+    }
+  },
+  "39": {
+    "inputs": {
+      "images": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "41": {
+    "inputs": {
+      "text": "45 degrees to the left front, 45 degrees to the right front",
+      "clip": [
+        "35",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "42": {
+    "inputs": {
+      "conditioning_1": [
+        "35",
+        6
+      ],
+      "conditioning_2": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "43": {
+    "inputs": {
+      "conditioning_1": [
+        "35",
+        7
+      ],
+      "conditioning_2": [
+        "44",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "44": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "35",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "45": {
+    "inputs": {
+      "strength": 1,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "42",
+        0
+      ],
+      "negative": [
+        "43",
+        0
+      ],
+      "control_net": [
+        "35",
+        16
+      ],
+      "image": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "46": {
+    "inputs": {
+      "seed": [
+        "35",
+        8
+      ],
+      "steps": [
+        "35",
+        12
+      ],
+      "cfg": [
+        "35",
+        13
+      ],
+      "sampler_name": [
+        "35",
+        4
+      ],
+      "scheduler": [
+        "35",
+        5
+      ],
+      "denoise": [
+        "35",
+        14
+      ],
+      "model": [
+        "35",
+        1
+      ],
+      "positive": [
+        "56",
+        0
+      ],
+      "negative": [
+        "56",
+        1
+      ],
+      "latent_image": [
+        "35",
+        26
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "47": {
+    "inputs": {
+      "black_pixel_for_xinsir_cn": false,
+      "image": [
+        "37",
+        0
+      ],
+      "mask": [
+        "37",
+        1
+      ]
+    },
+    "class_type": "InpaintPreprocessor",
+    "_meta": {
+      "title": "Inpaint Preprocessor"
+    }
+  },
+  "48": {
+    "inputs": {
+      "samples": [
+        "46",
+        0
+      ],
+      "vae": [
+        "35",
+        3
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "49": {
+    "inputs": {
+      "images": [
+        "48",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "51": {
+    "inputs": {
+      "images": [
+        "47",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "55": {
+    "inputs": {
+      "images": [
+        "37",
+        2
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "56": {
+    "inputs": {
+      "strength": 1,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "45",
+        0
+      ],
+      "negative": [
+        "45",
+        1
+      ],
+      "control_net": [
+        "35",
+        18
+      ],
+      "image": [
+        "47",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "57": {
+    "inputs": {
+      "train_config": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "3D_TrainConfigPipe",
+    "_meta": {
+      "title": "3D_TrainConfigPipe"
+    }
+  },
+  "58": {
+    "inputs": {
+      "mesh_model": [
+        "59",
+        0
+      ],
+      "albedo": [
+        "59",
+        1
+      ]
+    },
+    "class_type": "3D_GenerateInpaintUVMapMask",
+    "_meta": {
+      "title": "3D_GenerateInpaintUVMapMask"
+    }
+  },
+  "59": {
+    "inputs": {
+      "cam1": 5,
+      "cam2": 6,
+      "image": [
+        "48",
+        0
+      ],
+      "mesh_model": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "3D_Projection",
+    "_meta": {
+      "title": "3D_Projection"
+    }
+  },
+  "60": {
+    "inputs": {
+      "images": [
+        "59",
+        1
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "62": {
+    "inputs": {
+      "images": [
+        "58",
+        1
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "63": {
+    "inputs": {
+      "text": "UV map",
+      "clip": [
+        "57",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "64": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "57",
+        2
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "65": {
+    "inputs": {
+      "conditioning_1": [
+        "57",
+        6
+      ],
+      "conditioning_2": [
+        "63",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "66": {
+    "inputs": {
+      "conditioning_1": [
+        "57",
+        7
+      ],
+      "conditioning_2": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "67": {
+    "inputs": {
+      "strength": 1,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "65",
+        0
+      ],
+      "negative": [
+        "66",
+        0
+      ],
+      "control_net": [
+        "68",
+        0
+      ],
+      "image": [
+        "58",
+        1
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "68": {
+    "inputs": {
+      "control_net_name": "diffusion_pytorch_model.bin"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "69": {
+    "inputs": {
+      "black_pixel_for_xinsir_cn": false,
+      "image": [
+        "59",
+        1
+      ],
+      "mask": [
+        "58",
+        0
+      ]
+    },
+    "class_type": "InpaintPreprocessor",
+    "_meta": {
+      "title": "Inpaint Preprocessor"
+    }
+  },
+  "70": {
+    "inputs": {
+      "images": [
+        "69",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "71": {
+    "inputs": {
+      "strength": 0.5,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "67",
+        0
+      ],
+      "negative": [
+        "67",
+        1
+      ],
+      "control_net": [
+        "57",
+        18
+      ],
+      "image": [
+        "69",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "Apply ControlNet"
+    }
+  },
+  "72": {
+    "inputs": {
+      "pixels": [
+        "69",
+        0
+      ],
+      "vae": [
+        "57",
+        3
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "73": {
+    "inputs": {
+      "seed": [
+        "57",
+        8
+      ],
+      "steps": [
+        "57",
+        12
+      ],
+      "cfg": [
+        "57",
+        13
+      ],
+      "sampler_name": [
+        "57",
+        4
+      ],
+      "scheduler": [
+        "57",
+        5
+      ],
+      "denoise": 0.96,
+      "model": [
+        "57",
+        1
+      ],
+      "positive": [
+        "71",
+        0
+      ],
+      "negative": [
+        "71",
+        1
+      ],
+      "latent_image": [
+        "72",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "74": {
+    "inputs": {
+      "samples": [
+        "73",
+        0
+      ],
+      "vae": [
+        "57",
+        3
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "76": {
+    "inputs": {
+      "images": [
+        "74",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "77": {
+    "inputs": {
+      "model_name": "RealESRGAN_x2.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "79": {
+    "inputs": {
+      "upscale_model": [
+        "77",
+        0
+      ],
+      "image": [
+        "74",
+        0
+      ]
+    },
+    "class_type": "ImageUpscaleWithModel",
+    "_meta": {
+      "title": "Upscale Image (using Model)"
+    }
+  },
+  "80": {
+    "inputs": {
+      "mesh_model": [
+        "59",
+        0
+      ],
+      "uv_map": [
+        "79",
+        0
+      ]
+    },
+    "class_type": "3D_SaveUVMapImage",
+    "_meta": {
+      "title": "3D_SaveUVMapImage"
+    }
+  },
+  "81": {
+    "inputs": {
+      "file_name": "paint_uvwrap_render.mp4",
+      "mesh_model": [
+        "80",
+        0
+      ]
+    },
+    "class_type": "3D_GeneratePreviewVideo",
+    "_meta": {
+      "title": "3D_GeneratePreviewVideo"
+    }
+  },
+  "82": {
+    "inputs": {
+      "video": [
+        "81",
+        0
+      ],
+      "force_rate": 0,
+      "custom_width": 0,
+      "custom_height": 0,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "AnimateDiff"
+    },
+    "class_type": "VHS_LoadVideoPath",
+    "_meta": {
+      "title": "Load Video (Path) 🎥🅥🅗🅢"
+    }
+  },
+  "83": {
+    "inputs": {
+      "images": [
+        "82",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  }
+}

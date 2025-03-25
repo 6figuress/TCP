@@ -20,8 +20,10 @@ class Wrapper:
             resources={
                 r"/api/*": {
                     "origins": [
-                        "http://localhost:5173", "http://127.0.0.1:5173",
-                        "http://localhost:8888", "http://127.0.0.1:8888",
+                        "http://localhost:5173",
+                        "http://127.0.0.1:5173",
+                        "http://localhost:8888",
+                        "http://127.0.0.1:8888",
                     ],
                     "methods": ["POST", "OPTIONS"],
                     "allow_headers": ["Content-Type", "Accept"],
@@ -33,7 +35,7 @@ class Wrapper:
         self.llm_address = "192.168.91.12:11434"
 
         # Load the workflow JSON file
-        workflow_path: str = os.path.join("workflows", "paint3d.json")
+        workflow_path: str = os.path.join("workflows", "paint3d-optimized.json")
         try:
             with open(workflow_path, "r") as f:
                 self.workflow = json.load(f)
@@ -68,15 +70,12 @@ class Wrapper:
                 prompt = self.workflow.copy()
 
                 # Update the prompt text
-                if "14" in prompt:
-                    prompt["14"]["inputs"]["text"] = user_prompt
-                    print(f"Setting prompt text: {user_prompt}")
-                else:
-                    return jsonify({"error": "Invalid workflow configuration"}), 500
+                prompt["4"]["inputs"]["text"] = f"{user_prompt}, painting, high quality, colorful"
+                print(f"Setting prompt text: {user_prompt}")
 
                 # Update the seed
-                if "72" in prompt:
-                    prompt["72"]["inputs"]["seed"] = str(uuid.uuid4().int % (2**32))
+                # if "72" in prompt:
+                #     prompt["72"]["inputs"]["seed"] = str(uuid.uuid4().int % (2**32))
 
                 # Step 1: Process the prompt and wait for completion
                 print("Step 1: Processing prompt...")
@@ -195,20 +194,15 @@ class Wrapper:
         req = request.Request(f"http://{self.server_address}/prompt", data=data)
         return json.loads(request.urlopen(req).read())
 
-    def verify_execution(self, ws, prompt_id, timeout=300):
+    def verify_execution(self, ws, prompt_id):
         """
         Verify that the prompt execution completed successfully
         """
-        import time
 
-        start_time = time.time()
         execution_success = False
         final_node = False
 
         while True:
-            if time.time() - start_time > timeout:
-                raise TimeoutError("Execution timed out")
-
             out = ws.recv()
             if isinstance(out, str):
                 message = json.loads(out)
@@ -370,16 +364,3 @@ class Wrapper:
 
     def run(self, host="0.0.0.0", port=5000, debug=True):
         self.app.run(host=host, port=port, debug=debug)
-
-    def __del__(self):
-        """
-        Cleanup temporary directory when the object is destroyed
-        """
-        try:
-            import shutil
-
-            if hasattr(self, "temp_dir") and os.path.exists(self.temp_dir):
-                shutil.rmtree(self.temp_dir)
-        except:
-            # Ignore errors during shutdown
-            pass
