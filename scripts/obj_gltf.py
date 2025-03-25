@@ -79,28 +79,34 @@ for current_argument in sys.argv:
             obj.select_set(True)
         bpy.context.view_layer.objects.active = bpy.data.objects[0]
         bpy.ops.object.select_all(action="SELECT")
-        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
-        bpy.ops.view3d.camera_to_view_selected()
 
-    # Apply 10x scale to all objects before export
-    print("Applying 10x scale to all objects...")
+    # Apply X scale to all objects before export
+    print("Recaling the mesh...")
     for obj in bpy.data.objects:
         if obj.type == "MESH":
+            # Store the original location
+            original_location = obj.location.copy()
+
+            # Apply the rescale
             obj.scale.x *= 18
             obj.scale.y *= 18
             obj.scale.z *= 18
-            # Apply scale to make it permanent
+
+            # Make the scale transformation permanent while preserving origin
             bpy.context.view_layer.objects.active = obj
             obj.select_set(True)
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-            print(f"Rescaled object: {obj.name}")
 
-    # Move all objects 5 units down along the Z axis
-    print("Moving objects 5 units down along Z axis...")
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
-            obj.location.z -= 0.8
-            print(f"Moved object down: {obj.name}")
+            # Restore the original location
+            obj.location = original_location
+
+            print(f"Rescaled object while preserving origin: {obj.name}")
+
+    # Move all objects X units down along the Z axis
+    # for obj in bpy.data.objects:
+    #     if obj.type == "MESH":
+    #         obj.location.z -= 0.8
+    #         print(f"Moved object down: {obj.name}")
 
     export_file = os.path.join(temp_directory, current_basename + ".gltf")
     print("Writing: '" + export_file + "'")
