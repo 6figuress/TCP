@@ -45,9 +45,7 @@ class Wrapper:
 
         @self.app.route("/api/texture", methods=["POST", "OPTIONS"])
         def texture():
-            """
-            Mesh texturing endpoint that interfaces with ComfyUI.
-            """
+            """Mesh texturing endpoint that interfaces with ComfyUI"""
             # Handle OPTIONS request for CORS preflight
             if flask_request.method == "OPTIONS":
                 return jsonify({"status": "ok"})
@@ -62,7 +60,9 @@ class Wrapper:
 
                 # Validate input
                 if not user_prompt:
-                    return jsonify({"error": "Missing required parameters"}), 400
+                    return jsonify(
+                        {"error": "Missing required parameters"}
+                    ), 400
                 if self.workflow is None:
                     return jsonify({"error": "Workflow file not loaded"}), 500
 
@@ -70,12 +70,13 @@ class Wrapper:
                 prompt = self.workflow.copy()
 
                 # Update the prompt text
-                prompt["4"]["inputs"]["text"] = f"{user_prompt}, painting, high quality, colorful"
+                prompt["4"]["inputs"]["text"] = (
+                    f"{user_prompt}, painting, high quality, colorful"
+                )
                 print(f"Setting prompt text: {user_prompt}")
 
                 # Update the seed
-                # if "72" in prompt:
-                #     prompt["72"]["inputs"]["seed"] = str(uuid.uuid4().int % (2**32))
+                prompt["9"]["inputs"]["seed"] = str(uuid.uuid4().int % (2**32))
 
                 # Step 1: Process the prompt and wait for completion
                 print("Step 1: Processing prompt...")
@@ -90,7 +91,9 @@ class Wrapper:
                     glb_data = self.process_and_convert_to_glb(request_context)
                     glb_base64 = base64.b64encode(glb_data).decode("utf-8")
                 except Exception as e:
-                    return jsonify({"error": f"File processing failed: {str(e)}"}), 500
+                    return jsonify(
+                        {"error": f"File processing failed: {str(e)}"}
+                    ), 500
 
                 self.cleanup_context(request_context)
 
@@ -186,19 +189,14 @@ class Wrapper:
         return {"temp_dir": tempfile.mkdtemp(), "client_id": str(uuid.uuid4())}
 
     def queue_prompt(self, prompt, context):
-        """
-        Queue a prompt to ComfyUI
-        """
+        """Queue a prompt to ComfyUI"""
         p = {"prompt": prompt, "client_id": context["client_id"]}
         data = json.dumps(p).encode("utf-8")
         req = request.Request(f"http://{self.server_address}/prompt", data=data)
         return json.loads(request.urlopen(req).read())
 
     def verify_execution(self, ws, prompt_id):
-        """
-        Verify that the prompt execution completed successfully
-        """
-
+        """Verify that the prompt execution completed successfully"""
         execution_success = False
         final_node = False
 
@@ -226,7 +224,9 @@ class Wrapper:
                 elif message["type"] == "execution_error":
                     data = message["data"]
                     if data["prompt_id"] == prompt_id:
-                        print(f"Execution error: {data.get('error', 'Unknown error')}")
+                        print(
+                            f"Execution error: {data.get('error', 'Unknown error')}"
+                        )
                         return False
 
                 # Only return True when both conditions are met
@@ -235,9 +235,7 @@ class Wrapper:
                     return True
 
     def download_files(self, context):
-        """
-        Download the required files from the server
-        """
+        """Download the required files from the server"""
         files = {
             "obj": "base_duck.obj",
             "mtl": "base_duck.mtl",
@@ -266,9 +264,7 @@ class Wrapper:
         return file_paths
 
     def process_and_convert_to_glb(self, context):
-        """
-        Alternative method that uses external shell script to convert OBJ to GLB
-        """
+        """Alternative method that uses external shell script to convert OBJ to GLB"""
         files = self.download_files(context)
 
         try:
@@ -310,9 +306,7 @@ class Wrapper:
             raise Exception(f"Error converting to GLTF: {str(e)}")
 
     def process_prompt(self, prompt, context):
-        """
-        Process the prompt and verify execution
-        """
+        """Process the prompt and verify execution"""
         try:
             # First, queue the prompt and get prompt_id
             print("Queueing prompt...")
@@ -323,7 +317,9 @@ class Wrapper:
             # Then connect to websocket to monitor execution
             ws = websocket.WebSocket()
             ws.settimeout(300)  # 5 minutes timeout
-            ws.connect(f"ws://{self.server_address}/ws?clientId={context['client_id']}")
+            ws.connect(
+                f"ws://{self.server_address}/ws?clientId={context['client_id']}"
+            )
 
             # Wait for execution to complete
             print("Waiting for execution to complete...")
@@ -346,7 +342,9 @@ class Wrapper:
                                 else:
                                     print("Final node reached")
                             elif message["type"] == "execution_error":
-                                error = message["data"].get("error", "Unknown error")
+                                error = message["data"].get(
+                                    "error", "Unknown error"
+                                )
                                 print(f"Execution failed: {error}")
                                 return False
                             elif message["type"] == "execution_success":
