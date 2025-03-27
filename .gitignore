@@ -14,3 +14,6 @@ wheels/
 
 # Local Netlify folder
 .netlify
+
+# Benchmarking output
+benchmark_output
