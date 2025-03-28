@@ -16,4 +16,4 @@ wheels/
 .netlify
 
 # Benchmarking output
-benchmark_output
+*output*

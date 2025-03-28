@@ -57,7 +57,7 @@
   },
   "9": {
     "inputs": {
-      "mesh_file_path": "/root/ComfyUI/input/3d/base_duck.obj",
+      "mesh_file_path": "/root/ComfyUI/input/3d/final_rubber_duck.obj",
       "sampler": "dpmpp_2m_sde_gpu",
       "scheduler": "karras",
       "seed": 1684,
