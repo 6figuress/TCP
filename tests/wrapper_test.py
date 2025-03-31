@@ -1,5 +1,4 @@
 import json
-import os
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,7 +19,6 @@ def test_wrapper_initialization():
     """Test if Wrapper initializes correctly"""
     wrapper = Wrapper()
     assert isinstance(wrapper.app, Flask)
-    # Remove temp_dir check since it's now handled per request
     assert wrapper.server_address == "192.168.91.13:8188"
     assert wrapper.llm_address == "192.168.91.12:11434"
 
@@ -38,7 +36,9 @@ def test_texture_endpoint_workflow_error():
     wrapper.workflow = None  # Simulate missing workflow
 
     with wrapper.app.test_client() as client:
-        response = client.post("/api/texture", json={"user_prompt": "test prompt"})
+        response = client.post(
+            "/api/texture", json={"user_prompt": "test prompt"}
+        )
         assert response.status_code == 500
         assert json.loads(response.data)["error"] == "Workflow file not loaded"
 
@@ -47,12 +47,13 @@ def test_texture_endpoint_workflow_error():
 def test_process_prompt_execution_error(mock_ws):
     """Test handling of execution errors in process_prompt"""
     wrapper = Wrapper()
-    context = wrapper.create_request_context()
+    context = {
+        "temp_dir": "mock_dir"
+    }  # Mock context instead of creating real directory
 
     ws_instance = Mock()
     mock_ws.return_value = ws_instance
 
-    # Mock error message from websocket
     ws_instance.recv.return_value = json.dumps(
         {
             "type": "execution_error",
@@ -68,14 +69,11 @@ def test_process_prompt_execution_error(mock_ws):
 def test_download_files_error(mock_urlopen):
     """Test handling of file download errors"""
     wrapper = Wrapper()
-    context = wrapper.create_request_context()
+    context = {"temp_dir": "mock_dir"}  # Mock context
     mock_urlopen.side_effect = Exception("Download failed")
 
     file_paths = wrapper.download_files(context)
     assert all(path is None for path in file_paths.values())
-
-    # Cleanup
-    wrapper.cleanup_context(context)
 
 
 def test_run_method():
@@ -83,15 +81,19 @@ def test_run_method():
     wrapper = Wrapper()
     with patch.object(wrapper.app, "run") as mock_run:
         wrapper.run(host="127.0.0.1", port=8080, debug=False)
-        mock_run.assert_called_once_with(host="127.0.0.1", port=8080, debug=False)
+        mock_run.assert_called_once_with(
+            host="127.0.0.1", port=8080, debug=False
+        )
 
 
-def test_cleanup():
+@patch("os.path.exists")
+@patch("shutil.rmtree")
+def test_cleanup(mock_rmtree, mock_exists):
     """Test context cleanup"""
     wrapper = Wrapper()
-    context = wrapper.create_request_context()
-    temp_dir = context["temp_dir"]
-    assert os.path.exists(temp_dir)
+    context = {"temp_dir": "mock_dir"}
 
+    mock_exists.return_value = True
     wrapper.cleanup_context(context)
-    assert not os.path.exists(temp_dir)
+
+    mock_rmtree.assert_called_once_with("mock_dir")
