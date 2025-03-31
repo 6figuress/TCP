@@ -1,7 +1,9 @@
 name: Continuous testing
+
 on: [push, pull_request]
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     name: Test and coverage
     steps:
