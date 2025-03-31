@@ -31,4 +31,4 @@ COPY . .
 EXPOSE 5000
 
 # Command to run the API
-CMD ["uv", "run", "src/wrapper.py"]
+CMD ["uv", "run", "server.py"]
