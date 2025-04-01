@@ -161,7 +161,7 @@ The codebase is organized as follows:
 - `workflows/`: Directory for ComfyUI workflow configurations
 - `scripts/`: Additional scripts for benchmarking and visualization
 
-### ComfyUI Installation Steps
+## ComfyUI Installation Steps
 
 As the patched ComfyUI Docker image is not publicly available, the following steps are provided to build and run the patched ComfyUI container:
 
@@ -217,3 +217,11 @@ docker restart comfy3d-pt25
 - If custom nodes aren't visible, check the ComfyUI console for installation errors
 - Ensure all required models are properly downloaded and placed in the correct directories
 - Check Docker logs: `docker logs comfy3d-pt25`
+
+## LLM Deployment Steps
+
+A Ollama LLM server is required to run the adventure generation endpoint. It can be easily deployed using Docker:
+
+```bash
+docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
