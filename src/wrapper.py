@@ -36,9 +36,8 @@ class Wrapper:
 
         # Load the workflow JSON file
         workflow_path: str = os.path.join(
-            "workflows", "paint3d-optimized-pretrained.json"
+            "workflows", "paint3d-optimized-newmodel.json"
         )
-        # workflow_path: str = os.path.join("workflows", "paint3d-optimized.json")
         try:
             with open(workflow_path, "r") as f:
                 self.workflow = json.load(f)
@@ -239,11 +238,6 @@ class Wrapper:
 
     def download_files(self, context):
         """Download the required files from the server"""
-        # files = {
-        #     "obj": "base_duck.obj",
-        #     "mtl": "base_duck.mtl",
-        #     "texture": "albedo.png",
-        # }
         files = {
             "obj": "final_rubber_duck.obj",
             "mtl": "final_rubber_duck.mtl",
