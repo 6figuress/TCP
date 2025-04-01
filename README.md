@@ -147,6 +147,7 @@ TCP/
 ├── scripts/
 │   ├── benchmarking.py     # Performance testing
 │   └── visualization.py    # Blender visualization
+├── patch/       # Patch for ComfyUI
 ├── tests/
 │   └── wrapper_test.py     # Test suite
 ├── workflows/              # ComfyUI workflow configurations
@@ -159,3 +160,60 @@ The codebase is organized as follows:
 - `tests/wrapper_test.py`: Test suite
 - `workflows/`: Directory for ComfyUI workflow configurations
 - `scripts/`: Additional scripts for benchmarking and visualization
+
+### ComfyUI Installation Steps
+
+As the patched ComfyUI Docker image is not publicly available, the following steps are provided to build and run the patched ComfyUI container:
+
+1. Clone the ComfyUI Docker project:
+```bash
+git clone https://github.com/YanWenKun/ComfyUI-Docker
+cd ComfyUI-Docker
+```
+
+2. Create a storage directory:
+```bash
+mkdir -p storage
+```
+
+3. Run the ComfyUI container:
+```bash
+docker run -it --rm \
+  --name comfy3d-pt25 \
+  --gpus all \
+  -p 8188:8188 \
+  -v "$(pwd)"/storage:/root \
+  -e CLI_ARGS="" \
+  yanwk/comfyui-boot:comfy3d-pt25
+```
+
+4. Replace the server script:
+```bash
+# In another terminal
+docker cp /path/to/TCP/patch/server.py comfy3d-pt25:/root/user-scripts/server.py
+```
+
+5. Install Custom Nodes:
+   - Access the ComfyUI web interface at `http://localhost:8188`
+   - Navigate to the Manager tab
+   - Install [ComfyUI-Paint3D-Nodes](https://github.com/6figuress/ComfyUI-Paint3D-Nodes/tree/master)
+   - Install all required dependent custom nodes as specified in the repository
+
+6. Install Required Models:
+   - Follow the model installation guide at [ComfyUI-Paint3D-Nodes](https://github.com/6figuress/ComfyUI-Paint3D-Nodes/tree/master)
+   - Place the models in the appropriate directories as specified
+
+7. Restart the container:
+```bash
+docker restart comfy3d-pt25
+```
+
+### Verification
+- Access `http://localhost:8188` to ensure the ComfyUI server is running
+- Check that Paint3D nodes are available in the node list
+- Verify that all required models are properly loaded
+
+### Troubleshooting
+- If custom nodes aren't visible, check the ComfyUI console for installation errors
+- Ensure all required models are properly downloaded and placed in the correct directories
+- Check Docker logs: `docker logs comfy3d-pt25`
