@@ -39,7 +39,7 @@ prompts = [
 ]
 
 # Create output directory
-output_dir = "benchmark_output_finetuned"
+output_dir = "benchmark_output"
 os.makedirs(output_dir, exist_ok=True)
 
 # API endpoint

@@ -37,7 +37,8 @@ uv sync
 
 1. Ensure your ComfyUI server is running and accessible
 2. Update the `server_address` in `wrapper.py` if needed (default: "192.168.91.13:8188")
-3. Place your workflow JSON file in the `workflows` directory as `paint3d.json`
+3. Update the `llm_address` in `wrapper.py` if needed (default: "192.168.91.12:11434")
+4. Place your workflow JSON file in the `workflows` directory
 
 ## Usage
 
@@ -49,13 +50,13 @@ uv run server.py
 
 The server will start on `http://0.0.0.0:5000` by default.
 
-### API Endpoints
+## API Endpoints
 
-#### POST /api/texture
+### POST /api/texture
 
-Generate a textured 3D model from a prompt.
+Generates a textured 3D model from a text prompt using ComfyUI.
 
-**Request Body:**
+**Request:**
 ```json
 {
     "user_prompt": "Your texture description here"
@@ -72,25 +73,89 @@ Generate a textured 3D model from a prompt.
 }
 ```
 
-## Testing
+**Error Responses:**
+- `400 Bad Request`: Missing required parameters
+- `500 Internal Server Error`: Workflow file not loaded or execution failed
 
-Run the test suite using pytest:
+### POST /api/adventure
+
+Generates a fantasy story using the Mistral LLM with server-sent events (SSE).
+
+**Request:**
+```json
+{
+    "user_prompt": "Your story prompt here"
+}
+```
+
+**Response:**
+Server-sent events stream with the following format:
+```json
+{
+    "text": "Generated story content..."
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Missing user prompt
+- `500 Internal Server Error`: LLM connection or processing error
+
+## Testing and Benchmarking
+
+### Running Tests
 ```bash
 uv run pytest
 ```
 
-## Error Handling
+### Benchmarking Script
 
-The API includes comprehensive error handling for:
-- Missing parameters
-- Workflow file issues
-- Execution failures
-- File processing errors
-- Network communication issues
+The project includes a benchmarking script to test the texture generation with various prompts:
 
-## Development
+```bash
+uv run scripts/benchmarking.py
+```
+
+The script:
+- Processes a predefined list of prompts
+- Saves generated GLB files
+- Provides success/failure statistics
+- Creates output in `benchmark_output` directory
+
+### Visualization Script
+
+A Blender-based visualization script is included to compare different model versions:
+
+```bash
+uv run scripts/visualization.py
+```
+
+The script:
+- Compares GLB files from three different benchmark outputs
+- Creates side-by-side renders
+- Saves comparison images in `visualization_output` directory
+
+Features:
+- Automatic camera positioning
+- Professional lighting setup
+
+## Project Structure
+```
+TCP/
+├── server.py               # Main entrypoint script
+├── src/
+│   └── wrapper.py          # API implementation
+├── scripts/
+│   ├── benchmarking.py     # Performance testing
+│   └── visualization.py    # Blender visualization
+├── tests/
+│   └── wrapper_test.py     # Test suite
+├── workflows/              # ComfyUI workflow configurations
+└── README.md
+```
 
 The codebase is organized as follows:
-- `src/wrapper.py`: Main API implementation
+- `server.py`: Main entrypoint script
+- `src/wrapper.py`: API implementation
 - `tests/wrapper_test.py`: Test suite
 - `workflows/`: Directory for ComfyUI workflow configurations
+- `scripts/`: Additional scripts for benchmarking and visualization
